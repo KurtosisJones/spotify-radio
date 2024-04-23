@@ -1,0 +1,85 @@
+name: Deploy Lambda Layers
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: "us-east-1"
+  LIBRARY_JSON: libraries/libraries.json
+  PYTHON_VERSION: "3.8"
+  TFE_DIR: terraform
+
+jobs:
+  configure:
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout to repository
+        uses: actions/checkout@v3
+
+      - name: Set matrix data
+        id: set-matrix
+        run: echo "matrix=$(jq -c . < ./${{ env.LIBRARY_JSON }})" >> $GITHUB_OUTPUT
+
+  create-zip:
+    runs-on: ubuntu-20.04
+    needs: configure
+    strategy:
+      matrix: ${{ fromJson(needs.configure.outputs.matrix) }}
+    steps:
+      - name: Check matrix values
+        run: |
+          echo ${{ matrix.name }}
+          echo ${{ matrix.version }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Extract Name and Version
+        run: |
+          echo "LIBRARY_NAME=${{ matrix.name }}" >> $GITHUB_ENV
+          echo "LIBRARY_VERSION=${{ matrix.version }}" >> $GITHUB_ENV
+          echo "ZIP_NAME=${{ matrix.name }}-${{ matrix.version }}.zip" >> $GITHUB_ENV
+
+      - name: Install Python Library and Zip
+        run: |
+          mkdir -p lambda_layers/python
+          pip3 install "${LIBRARY_NAME}==${LIBRARY_VERSION}" -t lambda_layers/python
+          zip -r $ZIP_NAME lambda_layers/
+
+      - name: Upload Library Zip
+        uses: actions/upload-artifact@v3
+        with:
+          name: layers-zip
+          path: ${{ env.ZIP_NAME }}
+
+  deploy_lambda_layer:
+    name: Deploy lambda layer
+    needs: create-zip
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: layers-zip
+          path: ${{ env.TFE_DIR }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_version: '1.6.3'
+
+      - name: Deploy with Terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+        working-directory: ${{ env.TFE_DIR }}
