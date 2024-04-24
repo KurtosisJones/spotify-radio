@@ -73,6 +73,6 @@ resource "aws_iam_role_policy" "lambda_policy" {
 data "aws_iam_policy_document" "lambda_permissions" {
   statement {
     actions   = ["s3:GetObject"]
-    resources = [aws_s3_bucket.lambda_bucket[count.index].arn]
+    resources = element(aws_s3_bucket.lambda_bucket[*].bucket, 0)
   }
 }
