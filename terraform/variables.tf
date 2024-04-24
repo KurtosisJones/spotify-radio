@@ -1,9 +1,15 @@
-variable "aws_region" {
-  description = "us-east-1"
-  type        = string
+variable "region" {
+  default = "us-west-2"
 }
 
-variable "s3_bucket_name_prefix" {
-  description = "spotify_radio"
-  type        = string
+variable "bucket_name" {
+  default = "my-lambda-bucket"
+}
+
+variable "lambda_file_path" {
+  default = "lambda"
+}
+
+variable "lambda_file_name" {
+  default = "lambda_function.zip"
 }

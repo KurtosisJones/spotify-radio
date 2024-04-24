@@ -1,24 +1,49 @@
-# main.tf
-resource "aws_s3_bucket" "lambda_layer_bucket" {
-  bucket_prefix = var.s3_bucket_name_prefix
+provider "aws" {
+  region = var.region
 }
 
-resource "aws_s3_object" "lambda_layer_object" {
-  for_each = { for lib in var.libraries : lib.name => lib }
-
-  bucket = aws_s3_bucket.lambda_layer_bucket.id
-  key    = "${each.value.name}.zip"
-  source = each.value.zip_path
-  etag   = filemd5(each.value.zip_path)
+resource "aws_s3_bucket" "lambda_bucket" {
+  bucket = var.bucket_name
+  acl    = "private"
 }
 
-resource "aws_lambda_layer_version" "lambda_layer" {
-  for_each = { for lib in var.libraries : lib.name => lib }
+resource "aws_lambda_function" "example_lambda" {
+  function_name = "example_lambda"
+  
+  s3_bucket = aws_s3_bucket.lambda_bucket.bucket
+  s3_key    = "${var.lambda_file_path}/${var.lambda_file_name}"
 
-  layer_name          = each.value.name
-  s3_bucket           = aws_s3_bucket.lambda_layer_bucket.id
-  s3_key              = "${each.value.name}.zip"
-  compatible_runtimes = var.layer_compatible_runtimes
+  handler = "index.handler"
+  runtime = "nodejs14.x"
 
-  depends_on = [aws_s3_object.lambda_layer_object]
+  role = aws_iam_role.lambda_exec_role.arn
+}
+
+resource "aws_iam_role" "lambda_exec_role" {
+  name = "lambda_exec_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_policy" {
+  role   = aws_iam_role.lambda_exec_role.id
+  policy = data.aws_iam_policy_document.lambda_permissions.json
+}
+
+data "aws_iam_policy_document" "lambda_permissions" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = [aws_s3_bucket.lambda_bucket.arn]
+  }
 }
