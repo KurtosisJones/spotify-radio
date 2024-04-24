@@ -2,9 +2,38 @@ provider "aws" {
   region = var.region
 }
 
+variable "replace_bucket" {
+  type        = bool
+  default     = false
+}
+
 resource "aws_s3_bucket" "lambda_bucket" {
   bucket = var.bucket_name
   acl    = "private"
+
+  # Conditional creation or replacement
+  count = var.replace_bucket ? 1 : 0
+}
+
+data "terraform_remote_state" "existing_state" {
+  backend = "s3"
+  config = {
+    bucket = "your-terraform-state-bucket"
+    key    = "path/to/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+resource "null_resource" "remove_existing_bucket" {
+  count = data.terraform_remote_state.existing_state.outputs.lambda_bucket_exists ? 1 : 0
+
+  triggers = {
+    lambda_bucket_exists = data.terraform_remote_state.existing_state.outputs.lambda_bucket_exists
+  }
+
+  provisioner "local-exec" {
+    command = "terraform state rm aws_s3_bucket.lambda_bucket"
+  }
 }
 
 resource "aws_lambda_function" "example_lambda" {
