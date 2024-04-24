@@ -34,21 +34,28 @@ resource "null_resource" "remove_existing_bucket" {
   provisioner "local-exec" {
     command = "terraform state rm aws_s3_bucket.lambda_bucket"
   }
+
+  depends_on = [
+    aws_lambda_function.example_lambda,
+    aws_iam_role.lambda_exec_role,
+    aws_iam_role_policy.lambda_policy
+  ]
 }
 
 resource "aws_lambda_function" "example_lambda" {
-  function_name = "example_lambda"
-  
-  s3_bucket = element(aws_s3_bucket.lambda_bucket.*.bucket, 0)
-  s3_key    = "${var.lambda_file_path}/${var.lambda_file_name}"
+  count          = var.replace_bucket ? 1 : 0
 
-  handler = "index.handler"
-  runtime = "nodejs14.x"
-
-  role = aws_iam_role.lambda_exec_role.arn
+  function_name  = "example_lambda"
+  s3_bucket      = element(aws_s3_bucket.lambda_bucket.*.bucket, 0)
+  s3_key         = "${var.lambda_file_path}/${var.lambda_file_name}"
+  handler        = "index.handler"
+  runtime        = "nodejs14.x"
+  role           = aws_iam_role.lambda_exec_role[0].arn
 }
 
 resource "aws_iam_role" "lambda_exec_role" {
+  count = var.replace_bucket ? 1 : 0
+
   name = "lambda_exec_role"
 
   assume_role_policy = jsonencode({
@@ -66,13 +73,17 @@ resource "aws_iam_role" "lambda_exec_role" {
 }
 
 resource "aws_iam_role_policy" "lambda_policy" {
-  role   = aws_iam_role.lambda_exec_role.id
+  count = var.replace_bucket ? 1 : 0
+
+  role   = aws_iam_role.lambda_exec_role[0].id
   policy = data.aws_iam_policy_document.lambda_permissions.json
 }
 
 data "aws_iam_policy_document" "lambda_permissions" {
+  count = var.replace_bucket ? 1 : 0
+
   statement {
     actions   = ["s3:GetObject"]
-    resources = element(aws_s3_bucket.lambda_bucket[*].bucket, 0)
+    resources = [aws_s3_bucket.lambda_bucket[0].arn]
   }
 }
