@@ -30,15 +30,19 @@ jobs:
       - name: Terraform Init
         id: init
         run: terraform init
+        working-directory: terraform
 
       - name: Terraform Plan
         id: plan
         run: terraform plan
+        working-directory: terraform
 
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve
+        working-directory: terraform
 
       - name: Terraform Destroy
         if: github.event_name == 'delete'
         run: terraform destroy -auto-approve
+        working-directory: terraform
