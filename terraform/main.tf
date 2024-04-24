@@ -39,7 +39,7 @@ resource "null_resource" "remove_existing_bucket" {
 resource "aws_lambda_function" "example_lambda" {
   function_name = "example_lambda"
   
-  s3_bucket = aws_s3_bucket.lambda_bucket[count.index].bucket
+  s3_bucket = element(aws_s3_bucket.lambda_bucket.*.bucket, 0)
   s3_key    = "${var.lambda_file_path}/${var.lambda_file_name}"
 
   handler = "index.handler"
