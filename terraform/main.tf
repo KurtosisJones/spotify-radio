@@ -18,7 +18,7 @@ resource "aws_s3_bucket" "lambda_bucket" {
 data "terraform_remote_state" "existing_state" {
   backend = "s3"
   config = {
-    bucket = "your-terraform-state-bucket"
+    bucket = "my-lambda-bucket"
     key    = "path/to/terraform.tfstate"
     region = "us-east-1"
   }
