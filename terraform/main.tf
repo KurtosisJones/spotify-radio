@@ -35,16 +35,13 @@ data "aws_iam_policy_document" "s3_access" {
   }
 }
 
-# Define the IAM policy based on the policy document
 resource "aws_iam_policy" "s3_policy" {
   name   = "s3_policy"
   policy = data.aws_iam_policy_document.s3_access.json
 }
 
-# Attach the policy to the correct IAM role
 resource "aws_iam_role_policy_attachment" "s3_policy_attach" {
-  name       = "s3_policy_attach"
-  roles      = [aws_iam_role.iam_for_lambda.name]
+  role       = aws_iam_role.iam_for_lambda.name
   policy_arn = aws_iam_policy.s3_policy.arn
 }
 
