@@ -19,15 +19,33 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
+data "aws_iam_policy_document" "s3_access" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject"
+    ]
+
+    resources = [
+      "${aws_s3_bucket.my_bucket.arn}/*"
+    ]
+  }
+}
+
+# Define the IAM policy based on the policy document
 resource "aws_iam_policy" "s3_policy" {
   name   = "s3_policy"
   policy = data.aws_iam_policy_document.s3_access.json
 }
 
-
-resource "aws_iam_role_policy_attachment" "example_attachment" {
-  role       = aws_iam_role.example_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+# Attach the policy to the correct IAM role
+resource "aws_iam_role_policy_attachment" "s3_policy_attach" {
+  name       = "s3_policy_attach"
+  roles      = [aws_iam_role.iam_for_lambda.name]
+  policy_arn = aws_iam_policy.s3_policy.arn
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
