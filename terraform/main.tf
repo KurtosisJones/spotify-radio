@@ -19,6 +19,17 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
+resource "aws_iam_policy" "s3_policy" {
+  name   = "s3_policy"
+  policy = data.aws_iam_policy_document.s3_access.json
+}
+
+
+resource "aws_iam_role_policy_attachment" "example_attachment" {
+  role       = aws_iam_role.example_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
+
 resource "aws_iam_role" "iam_for_lambda" {
   name               = "iam_for_lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
