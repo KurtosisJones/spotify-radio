@@ -40,14 +40,14 @@ resource "aws_iam_policy" "s3_policy" {
   policy = data.aws_iam_policy_document.s3_access.json
 }
 
-resource "aws_iam_role_policy_attachment" "s3_policy_attach" {
-  role       = aws_iam_role.iam_for_lambda.name
-  policy_arn = aws_iam_policy.s3_policy.arn
-}
-
 resource "aws_iam_role" "iam_for_lambda" {
   name               = "iam_for_lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "s3_policy_attach" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.s3_policy.arn
 }
 
 data "archive_file" "lambda" {
