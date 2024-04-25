@@ -52,5 +52,5 @@ jobs:
       - name: Terraform Destroy
         id: destroy
         if: github.event.inputs.destroy == 'yes'
-        run: terraform destroy -auto-approve
+        run: terraform refresh && terraform destroy -auto-approve
         working-directory: terraform
