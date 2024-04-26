@@ -38,14 +38,13 @@ jobs:
         run: terraform init
         working-directory: terraform
 
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan
-        working-directory: terraform
-
       - name: Terraform State
         id: state
         run: terraform state list
+        
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan
         working-directory: terraform
 
       - name: Terraform Apply
