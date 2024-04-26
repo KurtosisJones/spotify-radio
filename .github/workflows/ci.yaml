@@ -43,6 +43,11 @@ jobs:
         run: terraform plan
         working-directory: terraform
 
+      - name: Terraform State
+        id: state
+        run: terraform state list
+        working-directory: terraform
+
       - name: Terraform Apply
         id: apply
         if: github.event.inputs.destroy != 'yes'
