@@ -12,10 +12,9 @@ terraform {
   }
 }
 
-
-# resource "aws_s3_bucket" "my_bucket" {
-#   bucket = "spotify-radio-latest"
-# }
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "spotify-radio-latest"
+}
 
 # data "aws_iam_policy_document" "assume_role" {
 #   statement {
