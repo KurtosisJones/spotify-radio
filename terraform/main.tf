@@ -2,6 +2,17 @@ provider "aws" {
   region = "us-east-1"
 }
 
+terraform {
+  backend "s3" {
+    bucket         = "terraform-state-bucket"
+    key            = "state/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "lock-table"
+    encrypt        = true
+  }
+}
+
+
 # resource "aws_s3_bucket" "my_bucket" {
 #   bucket = "spotify-radio-latest"
 # }
