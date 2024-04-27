@@ -100,12 +100,13 @@ class Kmedians(Cluster):
         return self.find_closest_cluster(distance)
 
 class DBScan:
-
-    def __init__(self, tol:float = 0.001, minimal_points:int = 10, random_state:int = 123):
+    
+    def __init__(self, tol: float = 0.001, minimal_points: int = 10, random_state: int = 123):
         self.tol = tol
         self.minimal_points = minimal_points
         self.random_state = random_state
-
+        self.core_points = []
+    
     def initialize_clusters(self, X):
         visited = np.zeros(X.shape[0], dtype=bool)
         noise = np.zeros(X.shape[0], dtype=bool)
@@ -123,6 +124,8 @@ class DBScan:
                 new_neighbors = self.query(neighbor, X)
                 if len(new_neighbors) >= self.minimal_points:
                     self.add_to_cluster(new_neighbors, cluster_id, X, visited, clusters)
+                    if neighbor not in self.core_points:
+                        self.core_points.append(neighbor)
 
     def fit(self, X):
         visited, noise = self.initialize_clusters(X)
@@ -139,15 +142,18 @@ class DBScan:
                     cluster_id += 1
                     clusters[p] = cluster_id
                     self.add_to_cluster(neighbors, cluster_id, X, visited, clusters)
+                    if p not in self.core_points:
+                        self.core_points.append(p)
         
-        return clusters
-    
-    def compute_distance(p1, p2):
-        return np.sqrt(np.sum((p1 - p2) ** 2))
+        return clusters, noise
 
-    def predict(self, p, X):
-        neighbors = []
-        for i, point in enumerate(X):
-            if self.euclidean_distance(X[p], point) <= self.tol:
-                neighbors.append(i)
-        return neighbors
+    def predict(self, new_point, X):
+        core_points_data = X[self.core_points]
+        distances = norm(core_points_data - new_point, axis=1)
+        
+        if np.any(distances < self.tol):
+            closest_core_point = np.argmin(distances)
+            cluster_label = self.clusters[self.core_points[closest_core_point]]
+            return cluster_label
+        else:
+            return -1
