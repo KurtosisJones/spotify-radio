@@ -141,3 +141,13 @@ class DBScan:
                     self.add_to_cluster(neighbors, cluster_id, X, visited, clusters)
         
         return clusters
+    
+    def compute_distance(p1, p2):
+        return np.sqrt(np.sum((p1 - p2) ** 2))
+
+    def predict(self, p, X):
+        neighbors = []
+        for i, point in enumerate(X):
+            if self.euclidean_distance(X[p], point) <= self.tol:
+                neighbors.append(i)
+        return neighbors
