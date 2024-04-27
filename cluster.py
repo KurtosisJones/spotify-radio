@@ -9,7 +9,7 @@ class Cluster:
         self.max_iter = max_iter
         self.random_state = random_state
 
-    def initializ_centroids(self, X):
+    def initialize_centroids(self, X):
         np.random.RandomState(self.random_state)
         random_idx = np.random.permutation(X.shape[0])
         centroids = X[random_idx[:self.n_clusters]]
@@ -41,7 +41,7 @@ class Kmeans(Cluster):
         return np.sum(np.square(distance))
     
     def fit(self, X):
-        self.centroids = self.initializ_centroids(X)
+        self.centroids = self.initialize_centroids(X)
         for i in range(self.max_iter):
             old_centroids = self.centroids
             distance = self.compute_distance(X, old_centroids)
@@ -84,7 +84,7 @@ class Kmedians(Cluster):
         return np.sum(distance)
 
     def fit(self, X):
-        self.centroids = self.initializ_centroids(X)
+        self.centroids = self.initialize_centroids(X)
         for i in range(self.max_iter):
             old_centroids = self.centroids
             distances = self.compute_distance(X, old_centroids)
@@ -94,4 +94,33 @@ class Kmedians(Cluster):
                 break
             centroids = self.centroids
         self.error = self.compute_sse(X, self.labels, self.centroids)
-    
+
+class DBScnan:
+
+    def __init__(self, tol:float = 0.001, minimal_points:int = 10, random_state:int = 123):
+        self.tol = tol
+        self.minimal_points = minimal_points
+        self.random_state = random_state
+
+    def initialize_clusters(X):
+
+        visited, noise = [False] * X.shape[0]
+
+        return np.column_stack((X, visited, noise))
+
+    def query(self, p, X):
+        distance = np.sum(np.square(norm(X - p, axis = 1)))
+        return distance < self.tol
+
+    def scan(self, X):
+        X_prime = self.initialize_clusters(X)
+        k = 0
+        for p in range(X_prime.shape[0]):
+            X_prime[:,-2] = True
+            nn = self.query(p, X)
+            if np.sum(nn) < self.minimal_points:
+                X_prime[:,-1] = True
+            else:
+                k += 1
+                
+        
