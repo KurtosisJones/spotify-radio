@@ -95,43 +95,49 @@ class Kmedians(Cluster):
             centroids = self.centroids
         self.error = self.compute_sse(X, self.labels, self.centroids)
 
-class DBScnan:
+    def predict(self, X):
+        distance = self.compute_distance(X, self.centroids)
+        return self.find_closest_cluster(distance)
+
+class DBScan:
 
     def __init__(self, tol:float = 0.001, minimal_points:int = 10, random_state:int = 123):
         self.tol = tol
         self.minimal_points = minimal_points
         self.random_state = random_state
 
-    def initialize_clusters(X):
-
-        visited, noise = [False] * X.shape[0]
-
-        return np.column_stack((X, visited, noise))
+    def initialize_clusters(self, X):
+        visited = np.zeros(X.shape[0], dtype=bool)
+        noise = np.zeros(X.shape[0], dtype=bool)
+        return visited, noise
 
     def query(self, p, X):
-        distance = np.sum(np.square(norm(X - X[:,p], axis = 1)))
-        return distance < self.tol
+        distances = norm(X - X[p], axis=1)
+        return np.where(distances < self.tol)[0]
 
-    def add_to_cluster(self, p, nn, k, X_prime):
-        for i in range(len(nn)):
-            if nn[i]:
-                X_prime[i, -1] = k
+    def add_to_cluster(self, neighbors, cluster_id, X, visited, clusters):
+        for neighbor in neighbors:
+            if not visited[neighbor]:
+                visited[neighbor] = True
+                clusters[neighbor] = cluster_id
+                new_neighbors = self.query(neighbor, X)
+                if len(new_neighbors) >= self.minimal_points:
+                    self.add_to_cluster(new_neighbors, cluster_id, X, visited, clusters)
 
+    def fit(self, X):
+        visited, noise = self.initialize_clusters(X)
+        cluster_id = 0
+        clusters = np.zeros(X.shape[0], dtype=int) - 1
 
-    def scan(self, X):
-        X_prime = self.initialize_clusters(X)
-        k = 0
-        for p in range(X_prime.shape[0]):
-            if not X_prime[p, -2]:
-                X_prime[p, -2] = True
-                nn = self.query(p, X)
-                if np.sum(nn) < self.minimal_points:
-                    X_prime[p, -1] = True
+        for p in range(X.shape[0]):
+            if not visited[p]:
+                visited[p] = True
+                neighbors = self.query(p, X)
+                if len(neighbors) < self.minimal_points:
+                    noise[p] = True
                 else:
-                    k += 1
-                    self.add_to_cluster(p, nn, k, X_prime)
-        return X_prime
-
-    
-
+                    cluster_id += 1
+                    clusters[p] = cluster_id
+                    self.add_to_cluster(neighbors, cluster_id, X, visited, clusters)
         
+        return clusters
