@@ -109,18 +109,29 @@ class DBScnan:
         return np.column_stack((X, visited, noise))
 
     def query(self, p, X):
-        distance = np.sum(np.square(norm(X - p, axis = 1)))
+        distance = np.sum(np.square(norm(X - X[:,p], axis = 1)))
         return distance < self.tol
+
+    def add_to_cluster(self, p, nn, k, X_prime):
+        for i in range(len(nn)):
+            if nn[i]:
+                X_prime[i, -1] = k
+
 
     def scan(self, X):
         X_prime = self.initialize_clusters(X)
         k = 0
         for p in range(X_prime.shape[0]):
-            X_prime[:,-2] = True
-            nn = self.query(p, X)
-            if np.sum(nn) < self.minimal_points:
-                X_prime[:,-1] = True
-            else:
-                k += 1
-                
+            if not X_prime[p, -2]:
+                X_prime[p, -2] = True
+                nn = self.query(p, X)
+                if np.sum(nn) < self.minimal_points:
+                    X_prime[p, -1] = True
+                else:
+                    k += 1
+                    self.add_to_cluster(p, nn, k, X_prime)
+        return X_prime
+
+    
+
         
