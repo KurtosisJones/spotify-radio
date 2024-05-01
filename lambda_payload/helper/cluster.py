@@ -4,7 +4,7 @@ from numpy.linalg import norm
 class Cluster:
     '''Initialize generic cluster options'''
 
-    def __init__(self, n_clusters, max_iter=100, random_state=123):
+    def __init__(self, n_clusters, max_iter=100, random_state=None):
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.random_state = random_state
@@ -35,10 +35,12 @@ class Kmeans(Cluster):
         return distance
 
     def compute_sse(self, X, labels, centroids):
-        distance = np.zeros(X.shape[0])
+        sse = 0
         for k in range(self.n_clusters):
-            distance[labels == k] = norm(X[labels == k] - centroids[k], axis=1)
-        return np.sum(np.square(distance))
+            cluster_points = X[labels == k]
+            cluster_centroid = centroids[k]
+            sse += np.sum(np.square(norm(cluster_points - cluster_centroid, axis=1)))
+        return sse
     
     def fit(self, X):
         self.centroids = self.initialize_centroids(X)
