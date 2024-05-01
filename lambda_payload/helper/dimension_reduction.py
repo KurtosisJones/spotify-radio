@@ -15,17 +15,16 @@ class PCA():
         eigenvalues, eigenvectors = np.linalg.eigh(self.get_covariance())
         return eigenvalues[::-1], eigenvectors[:, ::-1]
 
-    def get_pca(self, X):
+    def get_pca(self):
 
-        eigenvalues, eigenvectors = self.get_eigenvalues(
-            self.get_covariance())
+        eigenvalues, eigenvectors = self.get_eigenvalues()
 
         pc = eigenvectors[:, :self.components]
         return self.standarize_data @ pc
     
-    def explained_variance(eigenvalues):
-        total_variance = np.sum(eigenvalues)
-        explained_variances = eigenvalues / total_variance
+    def explained_variance(self):
+        total_variance = np.sum(self.get_eigenvalues()[0])
+        explained_variances = self.get_eigenvalues()[0] / total_variance
         cumulative_variance = np.cumsum(explained_variances)
 
         return explained_variances, cumulative_variance
