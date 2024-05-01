@@ -157,3 +157,7 @@ class DBScan:
             return cluster_label
         else:
             return -1
+
+class HierarchialClustering():
+    def __init__():
+        print("")
