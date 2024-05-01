@@ -3,16 +3,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-class pca():
+class PCA():
     def __init__(self, components:int, X):
         self.components = components
-        self.standarize_data = (X - np.mean(X, axis = 0)) / np.sd(X, axis = 0)
+        self.standarize_data = (X - np.mean(X, axis = 0)) / np.std(X, axis = 0)
 
     def get_covariance(self):
         return np.cov(self.standarize_data, rowvar=False)
     
     def get_eigenvalues(self):
-        eigenvalues, eigenvectors = np.linalg.eigh(self.get_covariance)
+        eigenvalues, eigenvectors = np.linalg.eigh(self.get_covariance())
         return eigenvalues[::-1], eigenvectors[:, ::-1]
 
     def get_pca(self, X):
