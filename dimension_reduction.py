@@ -133,9 +133,16 @@ class AutoEncoder():
                 optimizer.step()
                 total_loss += loss.item()
     
-    def predict(self, data):
+    def get_encoder(self, data):
         self.eval()
 
         with torch.no_grad():
-            predictions = self.forward(data)
+            predictions = self.encoder(data)
+        return predictions
+    
+    def get_decoder(self, data):
+        self.eval()
+
+        with torch.no_grad():
+            predictions = self.decoder(data)
         return predictions
