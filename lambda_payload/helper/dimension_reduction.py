@@ -2,9 +2,7 @@ import torch.nn as nn
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-import time
 
 class PCA():
     def __init__(self, components:int, X):
@@ -33,8 +31,12 @@ class PCA():
         return explained_variances, cumulative_variance
 
 class AutoEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, X):
         super(AutoEncoder, self).__init__()
+        self.standarize_data = (X - np.mean(X, axis = 0)) / np.std(X, axis = 0)
+        self.tensor_data = torch.tensor(self.standarize_data, dtype=torch.float32)
+        self.dataset = TensorDataset(self.tensor_data)
+        self.dataloader = DataLoader(self.dataset, batch_size=32, shuffle=True)
         
         # Adjust the input size to match the dataset features
         self.encoder = nn.Sequential(
@@ -56,10 +58,10 @@ class AutoEncoder(nn.Module):
         x = self.decoder(x)
         return x
     
-    def train(model, dataloader, epochs, loss_function, optimizer):
+    def train(model, X, epochs, loss_function, optimizer):
         model.train()
         for epoch in range(epochs):
-            for batch in dataloader:
+            for batch in self.dataloader:
                 inputs = batch[0]
                 outputs = model(inputs)
                 loss = loss_function(outputs, inputs)
@@ -70,16 +72,20 @@ class AutoEncoder(nn.Module):
                 
                 print(f'Epoch {epoch+1}, Loss: {loss.item()}')
     
-    def compress_data(encoder, dataloader):
-        compressed_data = []
-        encoder.eval()  # Set the model to evaluation mode
+    def compress_data(encoder, X):
+        standarize_data = (X - np.mean(X, axis = 0)) / np.std(X, axis = 0)
+        tensor_data = torch.tensor(standarize_data, dtype=torch.float32)
+        dataset = TensorDataset(tensor_data)
+        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-        with torch.no_grad():  # Turn off gradients for this block
+        compressed_data = []
+        encoder.eval()
+
+        with torch.no_grad():
             for batch in dataloader:
                 inputs = batch[0]
                 compressed_output = encoder(inputs)
                 compressed_data.append(compressed_output)
 
-        # Concatenate all batches
         compressed_data = torch.cat(compressed_data, dim=0)
         return compressed_data
