@@ -7,7 +7,11 @@ from torch.utils.data import DataLoader, TensorDataset
 class PCA():
     def __init__(self, components:int, X):
         self.components = components
-        self.standarize_data = (X - np.mean(X, axis = 0)) / np.std(X, axis = 0)
+        self.mean = np.mean(X, axis=0)
+        self.std = np.std(X, axis=0)
+        self.standarize_data = (X - self.mean) / self.std
+        self.eigenvalues, self.eigenvectors = self.get_eigenvalues()
+        self.pc = self.eigenvectors[:, :self.components]
 
     def get_covariance(self):
         return np.cov(self.standarize_data, rowvar=False)
@@ -29,6 +33,11 @@ class PCA():
         cumulative_variance = np.cumsum(explained_variances)
 
         return explained_variances, cumulative_variance
+    
+    def project(self, X_new):
+        X_new_standardized = (X_new - self.mean) / self.std
+        return X_new_standardized @ self.pc
+
 
 class AutoEncoder(nn.Module):
     def __init__(self, latent_space):
