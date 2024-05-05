@@ -65,28 +65,40 @@ def search_tracks_by_genre(access_token:str, genre:str, limit:int=50, records:in
 
     return track_ids
 
-def get_audio_features_by_id(access_token, track_ids):
-    audio_features = []
-    batch_size = 100
+def get_audio_features_by_id(access_token, track_id):
 
-    for start in range(0, len(track_ids), batch_size):
-        end = start + batch_size
-        batch_ids = track_ids[start:end]
-        url = f"https://api.spotify.com/v1/audio-analysis?ids={','.join(batch_ids)}"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        
-        print(f"{url=}")
-        response = safe_request(url, headers=headers)
-        data = response.json()
+    url = f"https://api.spotify.com/v1/audio-features/{track_id}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    response = safe_request(url, headers=headers)
+    data = response.json()
 
-        if 'error' in data:
-            print("Error:", data['error']['message'])
-            return None
-        
-        batch_features = data.get('audio_features', [])
-        if batch_features:
-            audio_features.extend(batch_features)
-        else:
-            print("No data received for batch:", batch_ids)
+    if 'error' in data:
+        print("Error:", data['error']['message'])
+        return None
 
-    return audio_features
+    return data
+
+def search_track_id_by_name(access_token, song_name, artist_name=None):
+    query = f"track:{song_name}"
+    if artist_name:
+        query += f" artist:{artist_name}"
+    query = query.replace(" ", "%20")  # URL encoding for spaces
+
+    url = f"https://api.spotify.com/v1/search?q={query}&type=track&limit=1"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    response = requests.get(url, headers=headers)
+    response_data = response.json()
+
+    if response.status_code != 200:
+        print(f"Error: {response_data.get('error', {}).get('message', 'Unknown error')}")
+        return None
+
+    tracks = response_data.get("tracks", {}).get("items", [])
+    if tracks:
+        return tracks[0]['id'], tracks[0]
+    else:
+        print("No track found.")
+        return None

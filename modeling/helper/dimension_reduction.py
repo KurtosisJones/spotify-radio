@@ -39,7 +39,7 @@ class AutoEncoder(nn.Module):
             raise Exception("latentent space cannot be the same dimension or larger than intermediates")
         
         self.encoder = nn.Sequential(
-            nn.Linear(14, 5),
+            nn.Linear(13, 5),
             nn.ReLU(),
             nn.Linear(5, self.latent_space),
             nn.ReLU()
@@ -48,7 +48,7 @@ class AutoEncoder(nn.Module):
         self.decoder = nn.Sequential(
             nn.Linear(self.latent_space, 5),
             nn.ReLU(),
-            nn.Linear(5, 14),
+            nn.Linear(5, 13),
             nn.ReLU()
         )
 
