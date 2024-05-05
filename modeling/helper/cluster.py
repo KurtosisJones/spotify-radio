@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.linalg import norm
+from scipy.spatial.distance import cdist
 
 class Cluster:
     '''Initialize generic cluster options'''
@@ -68,7 +69,7 @@ class Kmedians(Cluster):
     
     def compute_distance(self, X, centroids):
         distance = np.zeros((X.shape[0], self.n_clusters))
-        for k in range(centroids):
+        for k in range(self.n_clusters):
             distance[:, k] = norm(X - centroids[k, :], axis=1, ord=1)
         return distance
 
@@ -89,14 +90,14 @@ class Kmedians(Cluster):
     def fit(self, X):
         self.centroids = self.initialize_centroids(X)
         for i in range(self.max_iter):
-            old_centroids = self.centroids
-            distances = self.compute_distance(X, old_centroids)
+            centroids = self.centroids
+            distances = self.compute_distance(X, centroids)
             self.labels = self.find_closest_cluster(distances)
             self.centroids = self.update_medians(X, self.labels)
             if np.array_equal(centroids, self.centroids):
                 break
             centroids = self.centroids
-        self.error = self.compute_sse(X, self.labels, self.centroids)
+        self.error = self.compute_sad(X, self.labels, self.centroids)
         return self.centroids
     
     def predict(self, X):
@@ -116,36 +117,38 @@ class DBScan:
         noise = np.zeros(X.shape[0], dtype=bool)
         return visited, noise
 
-    def query(self, p, X):
-        distances = norm(X - X[p], axis=1)
-        return np.where(distances < self.tol)[0]
+    def query(self, p, X, distances):
+        return np.where(distances[p] < self.tol)[0]
 
-    def add_to_cluster(self, neighbors, cluster_id, X, visited, clusters):
-        for neighbor in neighbors:
-            if not visited[neighbor]:
-                visited[neighbor] = True
-                clusters[neighbor] = cluster_id
-                new_neighbors = self.query(neighbor, X)
+    def add_to_cluster(self, neighbors, cluster_id, X, visited, clusters, distances):
+        stack = list(neighbors)
+        while stack:
+            current = stack.pop()
+            if not visited[current]:
+                visited[current] = True
+                clusters[current] = cluster_id
+                new_neighbors = self.query(current, X, distances)
                 if len(new_neighbors) >= self.minimal_points:
-                    self.add_to_cluster(new_neighbors, cluster_id, X, visited, clusters)
-                    if neighbor not in self.core_points:
-                        self.core_points.append(neighbor)
+                    stack.extend([n for n in new_neighbors if not visited[n]])
+                if current not in self.core_points:
+                    self.core_points.append(current)
 
     def fit(self, X):
         visited, noise = self.initialize_clusters(X)
         cluster_id = 0
         clusters = np.zeros(X.shape[0], dtype=int) - 1
+        distances = cdist(X, X)
 
         for p in range(X.shape[0]):
             if not visited[p]:
                 visited[p] = True
-                neighbors = self.query(p, X)
+                neighbors = self.query(p, X, distances)
                 if len(neighbors) < self.minimal_points:
                     noise[p] = True
                 else:
                     cluster_id += 1
                     clusters[p] = cluster_id
-                    self.add_to_cluster(neighbors, cluster_id, X, visited, clusters)
+                    self.add_to_cluster(neighbors, cluster_id, X, visited, clusters, distances)
                     if p not in self.core_points:
                         self.core_points.append(p)
         self.clusters = clusters

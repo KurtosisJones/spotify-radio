@@ -31,20 +31,24 @@ class PCA():
         return explained_variances, cumulative_variance
 
 class AutoEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, latent_space):
         super(AutoEncoder, self).__init__()
+        self.latent_space = latent_space
+
+        if self.latent_space >= 5:
+            raise Exception("latentent space cannot be the same dimension or larger than intermediates")
         
         self.encoder = nn.Sequential(
-            nn.Linear(15, 5),
+            nn.Linear(14, 5),
             nn.ReLU(),
-            nn.Linear(5, 3),
+            nn.Linear(5, self.latent_space),
             nn.ReLU()
         )
         
         self.decoder = nn.Sequential(
-            nn.Linear(3, 5),
+            nn.Linear(self.latent_space, 5),
             nn.ReLU(),
-            nn.Linear(5, 15),
+            nn.Linear(5, 14),
             nn.ReLU()
         )
 
@@ -53,7 +57,7 @@ class AutoEncoder(nn.Module):
         x = self.decoder(x)
         return x
     
-    def train(model, X, epochs, loss_function, optimizer):
+    def custom_train(model, X, epochs, loss_function, optimizer):
         standarize_data = (X - np.mean(X, axis = 0)) / np.std(X, axis = 0)
         tensor_data = torch.tensor(standarize_data, dtype=torch.float32)
         dataset = TensorDataset(tensor_data)
