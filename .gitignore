@@ -3,3 +3,6 @@
 modeling/trained
 *dataset.csv
 *array.npy
+**/.terraform/**
+*.tfstate
+*.tfstate.*
